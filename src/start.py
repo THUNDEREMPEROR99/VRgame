@@ -33,7 +33,7 @@ import sounddevice as sd  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 
 from interview_system import EvaluationAgent, InterviewAgent, analyze_voice, transcribe_audio  # noqa: E402
-from interview_system.config import ModelConfig, create_chat_model  # noqa: E402
+from interview_system.config import create_chat_model_from_env  # noqa: E402
 from interview_system.loaders import load_questions  # noqa: E402
 from interview_system.tts import speak_async  # noqa: E402
 
@@ -132,13 +132,7 @@ async def main() -> None:
         questions_path = _REPO_ROOT / "examples" / "questions.json"
         questions = load_questions(questions_path)
 
-        model = create_chat_model(
-            ModelConfig(
-                model=os.environ["OPENROUTER_MODEL"],
-                api_key=os.environ["OPENROUTER_API_KEY"],
-                base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
-            )
-        )
+        model = create_chat_model_from_env()
         interview = InterviewAgent(questions, model=model)
         evaluation = EvaluationAgent(model=model, session_id=interview.session_id)
 

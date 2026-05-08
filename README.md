@@ -131,6 +131,10 @@ Create a `.env` file in the project root:
 ```env
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 OPENROUTER_MODEL=openai/gpt-4o-mini   # or any model on OpenRouter
+LLM_PROVIDER=groq                    # optional: openrouter or groq
+GROQ_CHAT_MODEL=openai/gpt-oss-120b  # optional, used when LLM_PROVIDER=groq
+GROQ_API_KEY=your_groq_api_key_here   # optional, enables faster Groq speech-to-text
+GROQ_STT_MODEL=whisper-large-v3-turbo  # optional, defaults to whisper-large-v3-turbo
 ```
 
 ### 3. Run the Streamlit UI
@@ -267,6 +271,10 @@ pytest
 |-----------------------|--------------------------------------|----------------------------------|
 | `OPENROUTER_API_KEY`  | Your OpenRouter API key              | `sk-or-v1-...`                   |
 | `OPENROUTER_MODEL`    | Model identifier on OpenRouter       | `openai/gpt-4o-mini`             |
+| `LLM_PROVIDER`        | Chat model provider                  | `openrouter` or `groq`           |
+| `GROQ_CHAT_MODEL`     | Groq chat model when using Groq      | `openai/gpt-oss-120b`            |
+| `GROQ_API_KEY`        | Optional Groq API key for speech-to-text | `gsk_...`                    |
+| `GROQ_STT_MODEL`      | Optional Groq speech-to-text model   | `whisper-large-v3-turbo`         |
 
 Model temperature and other parameters can be tuned in `config.py` via `ModelConfig`.
 

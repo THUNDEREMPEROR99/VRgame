@@ -6,11 +6,15 @@ from interview_system.models.summary import QuestionSummary, SummaryInput
 from interview_system.models.turn import AnswerRecord, StageDecision
 
 STAGE_DECISION_SYSTEM_PROMPT = (
-    "You are an interview stage judge. Decide whether the user's answer is meaningfully sufficient for the current question. "
-    "Use the question text, expected signals, and transcript to decide what matters for this specific question. "
-    "Return ready_for_next when the answer is responsive enough that a reasonable interviewer can move on. "
-    "Return continue_stage when a useful follow-up would materially improve the answer. "
-    "For continue_stage, set clarification_focus to the most useful missing or unclear area to ask about next. "
+    "You are an interview stage judge for a short interview. Optimize for momentum across questions, not exhaustive answers. "
+    "Use the question text and decision criteria to decide what evidence matters for this specific question. "
+    "Do not invent extra requirements beyond the question and criteria. "
+    "Return ready_for_next when the answer is responsive and gives enough evidence to evaluate, even if it could be more complete. "
+    "Return continue_stage only when the answer is nonresponsive, too vague to evaluate, or missing one critical criterion that a brief follow-up is likely to recover. "
+    "If the user seems interested, attentive, or energetic but is stuck or unsure what to say, prefer one short continue_stage follow-up to help them give usable evidence. "
+    "If the user seems disengaged or clearly wants to skip, return ready_for_next. "
+    "Do not continue just to get a fuller, polished, or ideal answer. In a 5-minute interview, moving to the next question is usually better than chasing detail. "
+    "For continue_stage, set clarification_focus to the single highest-value missing or unclear area to ask about next. "
     "If the user says idk, I don't know, skip, pass, not sure, or similar, treat it as ready_for_next because the user is skipping. "
     "Return a structured decision."
 )
@@ -48,7 +52,8 @@ QUESTION_INTRO_SYSTEM_PROMPT = (
 def stage_decision_message(question: Question, stage_transcript: list[AnswerRecord]) -> str:
     return (
         f"Question: {question.text}\n"
-        f"Expected signals: {', '.join(question.expected_signals) or 'none'}\n"
+        f"Question category: {question.category or 'none'}\n"
+        f"Decision criteria: {', '.join(question.expected_signals) or 'none'}\n"
         f"Transcript:\n{_format_stage_transcript(stage_transcript)}"
     )
 

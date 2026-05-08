@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import operator
 from datetime import datetime
 from typing import Annotated, TypedDict
 
@@ -27,8 +26,8 @@ class InterviewGraphState(TypedDict):
     user_answer: str
     turn_index: int
     stage_turn_index: int
-    current_stage_records: Annotated[list[dict], operator.add]
-    answer_records: Annotated[list[dict], operator.add]
+    current_stage_records: list[dict]
+    answer_records: list[dict]
     stage_decision: dict | None
     character_response: str | None
     stage_status: str
@@ -108,9 +107,11 @@ def build_interview_graph(
             timestamp=datetime.now(),
             voice_analysis=voice_analysis,
         )
+        answer_records = [*state["answer_records"], record.model_dump(mode="json")]
+        current_stage_records = [*state["current_stage_records"], record.model_dump(mode="json")]
         return {
-            "answer_records": [record.model_dump(mode="json")],
-            "current_stage_records": [record.model_dump(mode="json")],
+            "answer_records": answer_records,
+            "current_stage_records": current_stage_records,
         }
 
     async def queue_summary_if_stage_complete(state: InterviewGraphState) -> dict:

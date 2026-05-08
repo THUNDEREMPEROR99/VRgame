@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -9,8 +11,8 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from interview_system import EvaluationAgent, InterviewAgent, analyze_voice, transcribe_audio
-from interview_system.config import ModelConfig, create_chat_model
+from interview_system import EvaluationAgent, InterviewAgent, process_audio, warm_audio_models
+from interview_system.config import create_chat_model_from_env
 from interview_system.loaders import load_questions
 from interview_system.models.evaluation import FinalEvaluationReport
 
@@ -23,8 +25,25 @@ load_dotenv()
 REPO_ROOT = Path(__file__).resolve().parent.parent
 QUESTIONS_PATH = REPO_ROOT / "examples" / "questions.json"
 LOCAL_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+logger = logging.getLogger(__name__)
 
-app = FastAPI(title="VR Interview Server")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    warmup_task = asyncio.create_task(asyncio.to_thread(warm_audio_models))
+    warmup_task.add_done_callback(_log_warmup_failure)
+    yield
+
+
+def _log_warmup_failure(task: asyncio.Task) -> None:
+    if task.cancelled():
+        return
+    exc = task.exception()
+    if exc:
+        logger.warning("Audio model warm-up failed: %s", exc)
+
+
+app = FastAPI(title="VR Interview Server", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in os.getenv("CLIENT_ORIGINS", LOCAL_ORIGINS).split(",") if origin.strip()],
@@ -78,10 +97,7 @@ async def submit_audio_turn(session_id: str, file: UploadFile = File(...)) -> Au
     audio_path = await save_upload(session_id, state.upload_index, file)
     state.upload_index += 1
 
-    transcript, voice = await asyncio.gather(
-        asyncio.to_thread(transcribe_audio, str(audio_path)),
-        asyncio.to_thread(analyze_voice, str(audio_path)),
-    )
+    transcript, voice = await asyncio.to_thread(process_audio, str(audio_path))
     output = await state.interview.submit_answer(transcript, voice_analysis=voice)
 
     intro_text = None
@@ -135,17 +151,7 @@ async def media(session_id: str, filename: str) -> FileResponse:
 
 
 def _create_model():
-    if not os.getenv("OPENROUTER_API_KEY"):
-        raise HTTPException(status_code=500, detail="OPENROUTER_API_KEY is required")
-    if not os.getenv("OPENROUTER_MODEL"):
-        raise HTTPException(status_code=500, detail="OPENROUTER_MODEL is required")
-    return create_chat_model(
-        ModelConfig(
-            model=os.environ["OPENROUTER_MODEL"],
-            api_key=os.environ["OPENROUTER_API_KEY"],
-            base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
-        )
-    )
+    return create_chat_model_from_env()
 
 
 def _new_session(session_id: str | None = None) -> SessionState:

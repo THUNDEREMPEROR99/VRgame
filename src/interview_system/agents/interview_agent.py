@@ -302,12 +302,12 @@ class InterviewAgent:
             ]
         )
 
-        self._apply_graph_result(result)
+        stage_status = self._apply_graph_result(result)
         debug_events.append(
             self._debug_event(
                 "record_saved",
                 "Answer record saved",
-                stage_status=result["stage_status"],
+                stage_status=stage_status,
                 answer_record_count=len(self.answer_records),
                 current_stage_record_count=len(self.current_stage_records),
             )
@@ -316,7 +316,7 @@ class InterviewAgent:
         return InterviewOutput(
             session_id=self.session_id,
             character_response=result["character_response"],
-            stage_status=result["stage_status"],
+            stage_status=stage_status,
             debug_events=debug_events,
         )
 
@@ -409,7 +409,7 @@ class InterviewAgent:
     def get_state(self) -> StateSnapshot:
         return self.graph.get_state(config=self._config())
 
-    def _apply_graph_result(self, result: dict) -> None:
+    def _apply_graph_result(self, result: dict) -> str:
         self.turn_index += 1
         self.stage_turn_index += 1
         self.answer_records = [AnswerRecord.model_validate(record) for record in result["answer_records"]]
@@ -417,16 +417,17 @@ class InterviewAgent:
         self.session_data.answer_records = self.answer_records
         self._save_session()
 
-        if result["stage_status"] == "ready_for_next":
+        stage_status = result["stage_status"]
+        if stage_status == "continue_stage" and self.stage_turn_index >= self.max_turns_per_question:
+            stage_status = "ready_for_next"
+
+        if stage_status == "ready_for_next":
+            if result["stage_status"] != "ready_for_next":
+                self._enqueue_stage_summary()
             self._awaiting_next = True
             self.current_stage_records = []
             self.stage_turn_index = 0
-        elif self.stage_turn_index >= self.max_turns_per_question:
-            # Force move on — too many follow-ups
-            self._enqueue_stage_summary()
-            self._awaiting_next = True
-            self.current_stage_records = []
-            self.stage_turn_index = 0
+        return stage_status
 
     def _enqueue_stage_summary(self) -> None:
         question = self.questions[self.current_index]

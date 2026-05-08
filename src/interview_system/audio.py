@@ -5,11 +5,13 @@ Models load lazily on first use so importing ``interview_system`` stays light.
 
 from __future__ import annotations
 
+import os
 import threading
 from typing import Any, Literal, Mapping
 
 import librosa
 import numpy as np
+import requests
 import torch
 import torch.nn as nn
 from transformers import Wav2Vec2Processor
@@ -24,6 +26,8 @@ _LOAD_LOCK = threading.Lock()
 
 _EMOTION_MODEL_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
 _WHISPER_SIZE = "base.en"
+_GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
+_GROQ_STT_MODEL = "whisper-large-v3-turbo"
 
 
 class RegressionHead(nn.Module):
@@ -88,14 +92,60 @@ def _get_emotion_stack() -> tuple[Wav2Vec2Processor, EmotionModel]:
     return _EMOTION_PROCESSOR, _EMOTION_MODEL
 
 
+def warm_audio_models() -> None:
+    if not os.getenv("GROQ_API_KEY"):
+        _get_whisper_model()
+    _get_emotion_stack()
+
+
+def load_audio_16k(audio_path: str) -> np.ndarray:
+    waveform, _ = librosa.load(audio_path, sr=16000, mono=True)
+    return waveform
+
+
+def transcribe_waveform(waveform: np.ndarray) -> str:
+    whisper_model = _get_whisper_model()
+    result = whisper_model.transcribe(waveform, language="en")
+    return result["text"].strip()
+
+
+def transcribe_audio_with_groq(audio_path: str) -> str:
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise RuntimeError("GROQ_API_KEY is not configured")
+
+    with open(audio_path, "rb") as file:
+        response = requests.post(
+            _GROQ_TRANSCRIPTION_URL,
+            headers={"Authorization": f"Bearer {api_key}"},
+            data={
+                "model": os.getenv("GROQ_STT_MODEL", _GROQ_STT_MODEL),
+                "language": "en",
+                "response_format": "json",
+                "temperature": "0",
+            },
+            files={"file": (os.path.basename(audio_path), file)},
+            timeout=30,
+        )
+
+    if response.status_code >= 400:
+        raise RuntimeError(f"Groq transcription failed with HTTP {response.status_code}: {response.text}")
+
+    text = response.json().get("text", "")
+    return str(text).strip()
+
+
 def transcribe_audio(audio_path: str) -> str:
+    if os.getenv("GROQ_API_KEY"):
+        try:
+            return transcribe_audio_with_groq(audio_path)
+        except Exception:
+            pass
+
     # Load audio with librosa (no ffmpeg required), same as analyze_voice.
     # Whisper accepts a float32 numpy array directly, bypassing its internal
     # ffmpeg call that would otherwise be needed when given a file path.
-    whisper_model = _get_whisper_model()
-    waveform, _ = librosa.load(audio_path, sr=16000, mono=True)
-    result = whisper_model.transcribe(waveform, language="en")
-    return result["text"].strip()
+    return transcribe_waveform(load_audio_16k(audio_path))
 
 
 def interpret_voice_label(
@@ -113,9 +163,8 @@ def interpret_voice_label(
     return "nervous"
 
 
-def analyze_voice(audio_path: str) -> VoiceAnalysis:
+def analyze_voice_waveform(signal: np.ndarray) -> VoiceAnalysis:
     processor, model = _get_emotion_stack()
-    signal, _sample_rate = librosa.load(audio_path, sr=16000)
     inputs = processor(signal, sampling_rate=16000, return_tensors="pt")
 
     with torch.no_grad():
@@ -135,11 +184,33 @@ def analyze_voice(audio_path: str) -> VoiceAnalysis:
     )
 
 
+def analyze_voice(audio_path: str) -> VoiceAnalysis:
+    return analyze_voice_waveform(load_audio_16k(audio_path))
+
+
+def process_audio(audio_path: str) -> tuple[str, VoiceAnalysis]:
+    waveform = load_audio_16k(audio_path)
+    if os.getenv("GROQ_API_KEY"):
+        try:
+            transcript = transcribe_audio_with_groq(audio_path)
+        except Exception:
+            transcript = transcribe_waveform(waveform)
+    else:
+        transcript = transcribe_waveform(waveform)
+    return transcript, analyze_voice_waveform(waveform)
+
+
 __all__ = [
     "EmotionModel",
     "RegressionHead",
     "VoiceAnalysis",
     "analyze_voice",
+    "analyze_voice_waveform",
     "interpret_voice_label",
+    "load_audio_16k",
+    "process_audio",
     "transcribe_audio",
+    "transcribe_audio_with_groq",
+    "transcribe_waveform",
+    "warm_audio_models",
 ]
