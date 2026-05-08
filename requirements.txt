@@ -1,0 +1,17 @@
+langchain
+langchain-openai
+langgraph
+librosa
+openai-whisper
+pydantic
+python-dotenv
+pytest
+pytest-asyncio
+keyboard
+sounddevice
+streamlit
+torch
+torchaudio
+transformers
+edge-tts
+soundfile

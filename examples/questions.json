@@ -1,0 +1,54 @@
+[
+  {
+    "id": "q1",
+    "text": "Tell me about yourself and what led you to choose your field of study.",
+    "category": "general",
+    "expected_signals": [
+      "communication",
+      "self awareness",
+      "motivation",
+      "career direction",
+      "confidence",
+      "learning mindset"
+    ]
+  },
+  {
+    "id": "q2",
+    "text": "Tell me about a university project, assignment, or problem you worked on that was challenging. What was your role and how did you handle it?",
+    "category": "problem_solving",
+    "expected_signals": [
+      "problem solving",
+      "technical knowledge",
+      "ownership",
+      "critical thinking",
+      "accountability",
+      "decision making"
+    ]
+  },
+  {
+    "id": "q3",
+    "text": "Describe a time you worked with a team to complete a task or project. How did you contribute and handle disagreements or challenges?",
+    "category": "teamwork",
+    "expected_signals": [
+      "teamwork",
+      "collaboration",
+      "communication",
+      "conflict handling",
+      "adaptability",
+      "responsibility"
+    ]
+  },
+  {
+    "id": "q4",
+    "text": "Why do you want this role, and what skills are you currently trying to improve for your future career?",
+    "category": "motivation",
+    "expected_signals": [
+      "career fit",
+      "growth mindset",
+      "self improvement",
+      "role alignment",
+      "initiative",
+      "long term motivation"
+    ]
+  }
+]
