@@ -15,3 +15,7 @@ torchaudio
 transformers
 edge-tts
 soundfile
+fastapi
+uvicorn
+python-multipart
+requests

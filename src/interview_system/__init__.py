@@ -15,7 +15,7 @@ from interview_system import prompts
 from interview_system.audio import analyze_voice, transcribe_audio
 from interview_system.audio_io import submit_audio_answer
 from interview_system.models.voice_analysis import VoiceAnalysis
-from interview_system.tts import speak, speak_async
+from interview_system.tts import speak, speak_async, synthesize_mp3
 
 __all__ = [
     "EvaluationAgent",
@@ -26,6 +26,7 @@ __all__ = [
     "prompts",
     "speak",
     "speak_async",
+    "synthesize_mp3",
     "submit_audio_answer",
     "transcribe_audio",
 ]

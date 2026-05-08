@@ -1,0 +1,182 @@
+========================================================
+Server voice interview - http://127.0.0.1:8000
+K: start | SPACE: record toggle | ESC: quit
+========================================================
+Press K to start the interview...
+
+Session ID: acf8e736-0777-4259-9cf5-b15746702720
+
+Interviewer: Welcome! Let's getstarted with your introduction.
+
+Tell me about yourself and what led you to choose your field of study.
+
+Press SPACE to start recording...
+(recording...) Press SPACE again to stop.
+Saved: C:\Users\abdallah\Desktop\VRgame\recordings\client_acf8e736-0777-4259-9cf5-b15746702720_20260508-181436\turn_00.wav
+
+You said: Hello, I am Abdullah. I study AI. I love AI since I was a kid. I did so many projects on my field. So I love to continue. I love to continue on AI and university and it was fun and I actually love it.
+
+Voice analysis: {
+  "arousal": 0.363,
+  "dominance": 0.462,
+  "valence": 0.711,
+  "voice_label": "nervous"
+}
+
+
+Interviewer: Thanks, Abdullah.That gives us a good overview.
+
+Great, let's dive into that project you mentioned.
+
+Tell me about a university project, assignment, or problem you worked on that was challenging. What was your role and how did you handle it?
+
+Press SPACE to start recording...
+(recording...) Press SPACE again to stop.
+Saved: C:\Users\abdallah\Desktop\VRgame\recordings\client_acf8e736-0777-4259-9cf5-b15746702720_20260508-181436\turn_01.wav
+
+You said: I worked on my computer vision course project and it was about facial expression and I was the team leader of that project. We worked on that project for four weeks and we completed it on time. We did a great job by getting 20 out of 20 in the project. So it was a very great moment and a very great challenge to do.
+
+Voice analysis: {
+  "arousal": 0.296,
+  "dominance": 0.386,
+  "valence": 0.553,
+  "voice_label": "nervous"
+}
+
+
+Interviewer: Can you describe a specific technicalchallenge you encountered in that project and how you addressed it?
+
+Press SPACE to start recording...
+(recording...) Press SPACE again to stop.
+Saved: C:\Users\abdallah\Desktop\VRgame\recordings\client_acf8e736-0777-4259-9cf5-b15746702720_20260508-181436\turn_02.wav
+
+You said: Yes, we were choosing the models for the project and we encounter a very diverse selection of models. So we must do some research before selecting one. So we did diverse research and deep research and we explore so many options until we find the best one with the best parameters. So we can run it and fine tune it on that specific task.
+
+Voice analysis: {
+  "arousal": 0.325,
+  "dominance": 0.414,
+  "valence": 0.566,
+  "voice_label": "nervous"
+}
+
+
+Interviewer: Can you give an exampleof a specific model you evaluated that didn’t meet the performance target, and what concrete steps you took to choose and fine‑tune a better alternative?
+
+Press SPACE to start recording...
+(recording...) Press SPACE again to stop.
+Saved: C:\Users\abdallah\Desktop\VRgame\recordings\client_acf8e736-0777-4259-9cf5-b15746702720_20260508-181436\turn_03.wav
+
+You said: Can we move on to the next question?
+
+Voice analysis: {
+  "arousal": 0.324,
+  "dominance": 0.426,
+  "valence": 0.467,
+  "voice_label": "nervous"
+}
+
+
+Interviewer: Sure, let’s move on.
+
+Got it, let's move onto how you collaborate in a team setting.
+
+Describe a time you worked with a team to complete a task or project. How did you contribute and handle disagreements or challenges?
+
+Press SPACE to start recording...
+(recording...) Press SPACE again to stop.
+Saved: C:\Users\abdallah\Desktop\VRgame\recordings\client_acf8e736-0777-4259-9cf5-b15746702720_20260508-181436\turn_04.wav
+
+You said: Yes, I was in Hakathon and we built a project named FinAI. We was a team of five persons and from diverse departments. So we were three on IT department and two from the business department. So we built the project and we handled some issues with that project. And we tried to elaborate until we figure out what's the problem until we solved it. Then when we completed all that work, we give it to the business team so they can continue up. Then they have a problem. They didn't understand what the project about and how it's work. So explaining to them one by one everyone by its section of works until they understand and did their work.
+
+Voice analysis: {
+  "arousal": 0.304,
+  "dominance": 0.377,
+  "valence": 0.468,
+  "voice_label": "nervous"
+}
+
+
+Interviewer: Got it, Abdullah—thanks for sharing that experience. Let’s move on to the next question.
+
+Thanks for sharing that.Let's move on to your motivation and growth areas.
+
+Why do you want this role, and what skills are you currently trying to improve for your future career?
+
+Press SPACE to start recording...
+(recording...) Press SPACE again to stop.
+Saved: C:\Users\abdallah\Desktop\VRgame\recordings\client_acf8e736-0777-4259-9cf5-b15746702720_20260508-181436\turn_05.wav
+
+You said: I'm a junior developer, so I don't have many skills of interacting with developers and other mates. So I have to build my knowledge around them so I can improve my skills, which they are about a protection environment development. So I need to learn how to build products and build them correctly and test them the way users will use it. So this is why I need this job and this is all. It's very exciting for me because I'm hoping that I will learn and develop my protection project handling in future time.
+
+Voice analysis: {
+  "arousal": 0.321,
+  "dominance": 0.411,
+  "valence": 0.566,
+  "voice_label": "nervous"
+}
+
+
+Interviewer: Which specific technical or soft skills areyou most eager to develop in this role?
+
+Press SPACE to start recording...
+(recording...) Press SPACE again to stop.
+Saved: C:\Users\abdallah\Desktop\VRgame\recordings\client_acf8e736-0777-4259-9cf5-b15746702720_20260508-181436\turn_06.wav
+
+You said: Like I said, I was needing to develop my production environment skills like unit testing and other measurement UX development and product deployment and these aspects of skills.
+
+Voice analysis: {
+  "arousal": 0.295,
+  "dominance": 0.39,
+  "valence": 0.436,
+  "voice_label": "nervous"
+}
+
+
+Interviewer: Got it, thank you.
+
+Thank you for completing the interview. We'll review your responses shortly.
+
+Interview finished. Requesting final report...
+
+{
+  "final_answer_quality_score": 60,
+  "overall_score": 65,
+  "strengths": [
+    "Strong passion for AI and clear career direction",
+    "Leadership in project execution and teamwork",
+    "Technical research, model fine-tuning, and problem solving",
+    "Ability to communicate technical concepts to non\u2011technical audiences",
+    "Growth mindset and desire for continuous learning"
+  ],
+  "weaknesses": [
+    "Nervous tone indicating low confidence",
+    "Repetitive phrasing and overgeneralization",
+    "Lack of specific concrete examples and detailed corrective actions",
+    "Limited detail on handling conflicts or technical failures",
+    "Generic statements without concrete evidence"
+  ],
+  "per_question_overview": [
+    {
+      "question_id": "q1",
+      "score": 60,
+      "summary": "Abdullah expresses strong enthusiasm for AI, mentions many projects, and aims to continue studying AI at university, but his nervous tone and brief answer reveal limited confidence and depth."
+    },
+    {
+      "question_id": "q2",
+      "score": 50,
+      "summary": "The candidate describes leading a facial expression project and achieving a high score, yet provides vague details on a technical failure, shows repetitive phrasing, and appears nervous, reducing answer quality."
+    },
+    {
+      "question_id": "q3",
+      "score": 70,
+      "summary": "Abdullah led a four\u2011week computer vision project, coordinated a diverse team, conducted extensive model research, fine\u2011tuned a model, and explained results to a business team, demonstrating solid teamwork and communication, though he repeats answers and lacks conflict details."
+    },
+    {
+      "question_id": "q4",
+      "score": 60,
+      "summary": "The candidate wants the role to develop skills in protection environment development, unit testing, UX, and deployment, seeing it as growth opportunities, but his answer is generic and nervous, lacking specific examples."
+    }
+  ],
+  "recommendation": "needs_review",
+  "final_summary": "The candidate shows strong passion for AI, solid project leadership, and a clear growth mindset, but is hampered by nervousness, repetitive and generic answers, and a lack of concrete technical details. These strengths and weaknesses suggest the need for further review before a final decision."
+}

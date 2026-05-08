@@ -17,7 +17,7 @@ import soundfile as sf  # type: ignore[import-untyped]
 _VOICE = "en-US-AriaNeural"
 
 
-async def _synthesize(text: str) -> bytes:
+async def synthesize_mp3(text: str) -> bytes:
     communicate = edge_tts.Communicate(text, _VOICE)
     buf = bytearray()
     async for chunk in communicate.stream():
@@ -29,7 +29,7 @@ async def _synthesize(text: str) -> bytes:
 async def speak_async(text: str) -> None:
     if not text or not text.strip():
         return
-    mp3_bytes = await _synthesize(text)
+    mp3_bytes = await synthesize_mp3(text)
     data, sample_rate = sf.read(io.BytesIO(mp3_bytes), dtype="float32")
     sd.play(data, sample_rate)
     sd.wait()
@@ -39,4 +39,4 @@ def speak(text: str) -> None:
     asyncio.run(speak_async(text))
 
 
-__all__ = ["speak", "speak_async"]
+__all__ = ["speak", "speak_async", "synthesize_mp3"]
