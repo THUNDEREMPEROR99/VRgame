@@ -19,6 +19,7 @@ from interview_system.models.evaluation import FinalEvaluationReport
 from server.audio_files import media_path, save_agent_audio, save_upload
 from server.schemas import AudioTurnResponse, HealthResponse, StartSessionResponse
 from server.sessions import SessionState, add_session, get_session, replace_session
+from server.pairing import router as pairing_router
 
 load_dotenv()
 
@@ -46,11 +47,12 @@ def _log_warmup_failure(task: asyncio.Task) -> None:
 app = FastAPI(title="VR Interview Server", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in os.getenv("CLIENT_ORIGINS", LOCAL_ORIGINS).split(",") if origin.strip()],
+    allow_origins=LOCAL_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(pairing_router, prefix="/interview")
 
 
 @app.get("/health", response_model=HealthResponse)
