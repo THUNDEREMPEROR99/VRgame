@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🎤 VR Interview System
 
 An AI-powered, turn-based interview simulation system built with **LangGraph**, **LangChain**, and **Streamlit**. It conducts structured interviews, evaluates answers in real-time using LLMs, and generates a detailed final evaluation report — optionally with voice input/output.
@@ -308,3 +309,6 @@ Model temperature and other parameters can be tuned in `config.py` via `ModelCon
 ## 📄 License
 
 This project is for educational and research purposes.
+=======
+# VRgame
+>>>>>>> 4d55f7594b65b586582261f572f9b500cfa24d00
