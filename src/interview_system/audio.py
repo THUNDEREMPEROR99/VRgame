@@ -1,27 +1,26 @@
-"""Audio transcription (Whisper) and voice analysis (Wav2Vec2 MSP-DIM).
+"""Audio transcription (Groq) and voice analysis (Wav2Vec2 MSP-DIM).
 
-Models load lazily on first use so importing ``interview_system`` stays light.
+Heavy ML deps (torch, transformers, whisper) load lazily on first use so
+importing ``interview_system`` stays light enough for 512MB-class servers.
 """
 
 from __future__ import annotations
 
 import os
 import threading
-from typing import Any, Literal, Mapping
+from typing import Any, Literal, Mapping, TYPE_CHECKING
 
 import librosa
 import numpy as np
 import requests
-import torch
-import torch.nn as nn
-from transformers import Wav2Vec2Processor
-from transformers.models.wav2vec2.modeling_wav2vec2 import Wav2Vec2Model, Wav2Vec2PreTrainedModel
 
-from interview_system.models.voice_analysis import VoiceAnalysis
+if TYPE_CHECKING:
+    from transformers import Wav2Vec2Processor
+    from interview_system.models.voice_analysis import VoiceAnalysis
 
 _WHISPER_MODEL: Any = None
-_EMOTION_PROCESSOR: Wav2Vec2Processor | None = None
-_EMOTION_MODEL: EmotionModel | None = None
+_EMOTION_PROCESSOR: Any = None
+_EMOTION_MODEL: Any = None
 _LOAD_LOCK = threading.Lock()
 
 _EMOTION_MODEL_ID = "audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim"
@@ -29,70 +28,87 @@ _WHISPER_SIZE = "base.en"
 _GROQ_TRANSCRIPTION_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
 _GROQ_STT_MODEL = "whisper-large-v3-turbo"
 
-
-class RegressionHead(nn.Module):
-    def __init__(self, config: Any) -> None:
-        super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.final_dropout)
-        self.out_proj = nn.Linear(config.hidden_size, config.num_labels)
-
-    def forward(self, features: Any, **kwargs: Any) -> Any:
-        x = features
-        x = self.dropout(x)
-        x = self.dense(x)
-        x = torch.tanh(x)
-        x = self.dropout(x)
-        x = self.out_proj(x)
-        return x
+# When set to "1", skip all local-model loading. Use on memory-constrained
+# servers (Render free tier, etc.) — only Groq-backed transcription will work.
+_SKIP_LOCAL_MODELS = os.getenv("SKIP_LOCAL_AUDIO_MODELS", "0") == "1"
 
 
-class EmotionModel(Wav2Vec2PreTrainedModel):
-    def __init__(self, config: Any) -> None:
-        super().__init__(config)
-        self.config = config
-        self.wav2vec2 = Wav2Vec2Model(config)
-        self.classifier = RegressionHead(config)
-        self.init_weights()
+def _build_emotion_classes() -> tuple[type, type]:
+    """Build EmotionModel/RegressionHead lazily so torch isn't imported at module load."""
+    import torch
+    import torch.nn as nn
+    from transformers.models.wav2vec2.modeling_wav2vec2 import Wav2Vec2Model, Wav2Vec2PreTrainedModel
 
-    @property
-    def _tied_weights_keys(self) -> list[str]:
-        # This regression model doesn't use weight tying
-        return []
+    class RegressionHead(nn.Module):
+        def __init__(self, config: Any) -> None:
+            super().__init__()
+            self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+            self.dropout = nn.Dropout(config.final_dropout)
+            self.out_proj = nn.Linear(config.hidden_size, config.num_labels)
 
-    @property
-    def all_tied_weights_keys(self) -> dict[str, list[str]]:
-        # Compatibility with transformers >= 5.x which expects this attribute
-        return {}
+        def forward(self, features: Any, **kwargs: Any) -> Any:
+            x = features
+            x = self.dropout(x)
+            x = self.dense(x)
+            x = torch.tanh(x)
+            x = self.dropout(x)
+            x = self.out_proj(x)
+            return x
 
-    def forward(self, input_values: Any) -> Any:
-        outputs = self.wav2vec2(input_values)
-        hidden_states = outputs[0]
-        hidden_states = torch.mean(hidden_states, dim=1)
-        logits = self.classifier(hidden_states)
-        return logits
+    class EmotionModel(Wav2Vec2PreTrainedModel):
+        def __init__(self, config: Any) -> None:
+            super().__init__(config)
+            self.config = config
+            self.wav2vec2 = Wav2Vec2Model(config)
+            self.classifier = RegressionHead(config)
+            self.init_weights()
+
+        @property
+        def _tied_weights_keys(self) -> list[str]:
+            return []
+
+        @property
+        def all_tied_weights_keys(self) -> dict[str, list[str]]:
+            return {}
+
+        def forward(self, input_values: Any) -> Any:
+            outputs = self.wav2vec2(input_values)
+            hidden_states = outputs[0]
+            hidden_states = torch.mean(hidden_states, dim=1)
+            logits = self.classifier(hidden_states)
+            return logits
+
+    return EmotionModel, RegressionHead
 
 
 def _get_whisper_model() -> Any:
     global _WHISPER_MODEL
+    if _SKIP_LOCAL_MODELS:
+        raise RuntimeError("Local whisper disabled (SKIP_LOCAL_AUDIO_MODELS=1). Use Groq instead.")
     with _LOAD_LOCK:
         if _WHISPER_MODEL is None:
             import whisper  # type: ignore[import-untyped]
-
             _WHISPER_MODEL = whisper.load_model(_WHISPER_SIZE)
     return _WHISPER_MODEL
 
 
-def _get_emotion_stack() -> tuple[Wav2Vec2Processor, EmotionModel]:
+def _get_emotion_stack() -> tuple[Any, Any]:
     global _EMOTION_PROCESSOR, _EMOTION_MODEL
+    if _SKIP_LOCAL_MODELS:
+        raise RuntimeError("Voice emotion analysis disabled on this deployment (SKIP_LOCAL_AUDIO_MODELS=1).")
     with _LOAD_LOCK:
         if _EMOTION_PROCESSOR is None or _EMOTION_MODEL is None:
+            from transformers import Wav2Vec2Processor
+            EmotionModel, _ = _build_emotion_classes()
             _EMOTION_PROCESSOR = Wav2Vec2Processor.from_pretrained(_EMOTION_MODEL_ID)
             _EMOTION_MODEL = EmotionModel.from_pretrained(_EMOTION_MODEL_ID)
     return _EMOTION_PROCESSOR, _EMOTION_MODEL
 
 
 def warm_audio_models() -> None:
+    """Pre-load models. No-op on memory-constrained deployments."""
+    if _SKIP_LOCAL_MODELS:
+        return
     if not os.getenv("GROQ_API_KEY"):
         _get_whisper_model()
     _get_emotion_stack()
@@ -140,18 +156,15 @@ def transcribe_audio(audio_path: str) -> str:
         try:
             return transcribe_audio_with_groq(audio_path)
         except Exception:
+            if _SKIP_LOCAL_MODELS:
+                raise
             pass
-
-    # Load audio with librosa (no ffmpeg required), same as analyze_voice.
-    # Whisper accepts a float32 numpy array directly, bypassing its internal
-    # ffmpeg call that would otherwise be needed when given a file path.
     return transcribe_waveform(load_audio_16k(audio_path))
 
 
 def interpret_voice_label(
     scores: Mapping[str, float],
 ) -> Literal["confident", "neutral", "nervous"]:
-    """60% dominance, 40% calmness (1 - arousal). Same thresholds as legacy script."""
     arousal = float(scores["arousal"])
     dominance = float(scores["dominance"])
     confidence = (dominance * 0.6) + ((1 - arousal) * 0.4)
@@ -163,7 +176,14 @@ def interpret_voice_label(
     return "nervous"
 
 
-def analyze_voice_waveform(signal: np.ndarray) -> VoiceAnalysis:
+def analyze_voice_waveform(signal: np.ndarray) -> "VoiceAnalysis":
+    from interview_system.models.voice_analysis import VoiceAnalysis
+
+    if _SKIP_LOCAL_MODELS:
+        # Return a neutral stub when running without local models
+        return VoiceAnalysis(arousal=0.5, dominance=0.5, valence=0.5, voice_label="neutral")
+
+    import torch
     processor, model = _get_emotion_stack()
     inputs = processor(signal, sampling_rate=16000, return_tensors="pt")
 
@@ -184,11 +204,11 @@ def analyze_voice_waveform(signal: np.ndarray) -> VoiceAnalysis:
     )
 
 
-def analyze_voice(audio_path: str) -> VoiceAnalysis:
+def analyze_voice(audio_path: str) -> "VoiceAnalysis":
     return analyze_voice_waveform(load_audio_16k(audio_path))
 
 
-def process_audio(audio_path: str) -> tuple[str, VoiceAnalysis]:
+def process_audio(audio_path: str) -> tuple[str, "VoiceAnalysis"]:
     waveform = load_audio_16k(audio_path)
     if os.getenv("GROQ_API_KEY"):
         try:
@@ -201,9 +221,6 @@ def process_audio(audio_path: str) -> tuple[str, VoiceAnalysis]:
 
 
 __all__ = [
-    "EmotionModel",
-    "RegressionHead",
-    "VoiceAnalysis",
     "analyze_voice",
     "analyze_voice_waveform",
     "interpret_voice_label",
