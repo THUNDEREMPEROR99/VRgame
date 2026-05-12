@@ -11,7 +11,10 @@ import asyncio
 import io
 
 import edge_tts  # type: ignore[import-untyped]
-import sounddevice as sd  # type: ignore[import-untyped]
+try:
+    import sounddevice as sd  # type: ignore[import-untyped]
+except (ImportError, OSError):
+    sd = None  # server environment has no audio output device; speak() is a no-op
 import soundfile as sf  # type: ignore[import-untyped]
 
 _VOICE = "en-US-AriaNeural"
@@ -30,6 +33,9 @@ async def speak_async(text: str) -> None:
     if not text or not text.strip():
         return
     mp3_bytes = await synthesize_mp3(text)
+    if sd is None:
+        # Server environment — synthesize only, don't play locally.
+        return
     data, sample_rate = sf.read(io.BytesIO(mp3_bytes), dtype="float32")
     sd.play(data, sample_rate)
     sd.wait()
